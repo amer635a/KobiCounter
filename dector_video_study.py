@@ -3,7 +3,7 @@ from ultralytics import YOLO
  
 points = []
 
-model = YOLO(".\my_model\my_model.pt")
+model = YOLO("./my_model/my_model.pt")
 labels = model.names
 print(labels)
 
