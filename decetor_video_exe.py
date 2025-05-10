@@ -2,7 +2,7 @@ from ultralytics import YOLO
 import cv2
 
 # Load the YOLO model
-model = YOLO(".\\weightsv6\\best.pt")
+model = YOLO("my_model/my_model.pt")
 
 # Open the video file
 video_path = ".\\kobi2\\IMG_3361.mp4"

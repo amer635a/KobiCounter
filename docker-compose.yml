@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  mqtt:
+    image: eclipse-mosquitto
+    container_name: mqtt
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+
+#   video-publisher:
+#     build: ./video_publisher
+#     container_name: video_publisher
+#     depends_on:
+#       - mqtt
+#     environment:
+#       - MQTT_BROKER=mqtt
+#     devices:
+#       - "/dev/video0:/dev/video0"  # if using a webcam (Linux)
+#     restart: unless-stopped
+
+  react-viewer:
+    build: ./react_viewer
+    container_name: react_viewer
+    depends_on:
+      - mqtt
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
