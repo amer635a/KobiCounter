@@ -1,0 +1,40 @@
+# Ignore Python cache files
+__pycache__/
+*.py[cod]
+
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Ignore virtual environments
+venv/
+.env/
+
+# Ignore Docker-related files
+*.log
+docker-compose.override.yml
+
+# Ignore node_modules for frontend
+node_modules/
+
+# Ignore build outputs
+build/
+dist/
+
+# Ignore React project build outputs
+kobi_viewer/build/
+
+# Ignore React project dependencies
+kobi_viewer/node_modules/
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore model weights and large files
+*.pt
+*.zip
+*.mp4
+
+# Ignore IDE-specific files
+.vscode/
+.idea/
