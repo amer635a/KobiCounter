@@ -4,59 +4,69 @@ import mqtt from 'mqtt';
 function VideoStream() {
   const [client, setClient] = useState(null);
   const [image, setImage] = useState(null);
+  const [imgKey, setImgKey] = useState(0);
   const [connectStatus, setConnectStatus] = useState('Disconnected');
 
-  const mqttConnect = (host, mqttOptions) => {
-    setConnectStatus('Connecting');
-    const mqttClient = mqtt.connect(host, mqttOptions);
-    setClient(mqttClient);
+  // Fix base64 padding
+  const fixBase64Padding = (str) => {
+    return str + '='.repeat((4 - str.length % 4) % 4);
   };
 
   useEffect(() => {
-    if (client) {
-      client.on('connect', () => {
-        setConnectStatus('Connected');
-        // Subscribe to the topic when connected
-        client.subscribe('video/stream', { qos: 0 }, (err) => {
-          if (err) {
-            console.error('Failed to subscribe: ', err);
+    const mqttClient = mqtt.connect('ws://localhost:9001', {}); // your broker websocket URL
+    setClient(mqttClient);
+
+    mqttClient.on('connect', () => {
+      setConnectStatus('Connected');
+      mqttClient.subscribe('video/stream/analayze/resp');
+    });
+
+    mqttClient.on('message', (topic, message) => {
+      if (topic === 'video/stream/analayze/resp') {
+        try {
+          const payload = JSON.parse(message.toString());
+          if (payload.image) {
+            const base64img = fixBase64Padding(payload.image);
+            setImage(`data:image/jpeg;base64,${base64img}`);
+            setImgKey((k) => k + 1);  // change key to force reload
           }
-        });
-      });
-
-      client.on('error', (err) => {
-        console.error('Connection error: ', err);
-        client.end();
-      });
-
-      client.on('reconnect', () => {
-        setConnectStatus('Reconnecting');
-      });
-
-      client.on('message', (topic, message) => {
-        // Decode the base64 message and set it as an image source
-        if (topic === 'video/stream') {
-          const base64Data = message.toString();
-          setImage(`data:image/jpeg;base64,${base64Data}`);
+        } catch (e) {
+          console.error('Error parsing message', e);
         }
-      });
-    }
-  }, [client]);
+      }
+    });
 
-  useEffect(() => {
-    mqttConnect('ws://localhost:9001', {}); // Connect to the broker
+    mqttClient.on('error', (err) => {
+      console.error('MQTT error', err);
+      mqttClient.end();
+      setConnectStatus('Disconnected');
+    });
+
+    mqttClient.on('close', () => {
+      setConnectStatus('Disconnected');
+    });
+
+    return () => {
+      mqttClient.end();
+    };
   }, []);
 
   return (
     <div>
-      <p>Connection Status: {connectStatus}</p>
-      <div>
-        {image ? (
-          <img src={image} alt="Video Stream" width="640" height="480" />
-        ) : (
-          <p>Waiting for video stream...</p>
-        )}
-      </div>
+      <h2>Video Stream</h2>
+      <p>Status: {connectStatus}</p>
+      {image ? (
+        <img
+          key={imgKey}
+          src={image}
+          alt="Streamed"
+          width="640"
+          height="480"
+          style={{ border: '1px solid black' }}
+        />
+      ) : (
+        <p>No image received yet</p>
+      )}
     </div>
   );
 }
