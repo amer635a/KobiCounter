@@ -1,0 +1,41 @@
+/* Header styles moved from homePageStyle.css */
+.header-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background: #fff;
+  padding: 16px 32px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  border-radius: 0 0 18px 18px;
+  margin-bottom: 32px;
+}
+
+.header-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+}
+
+.header-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+
+.header-logo {
+  height: 50px;
+  width: auto;
+  margin-right: 0;
+}
+
+.header-home-icon {
+  color: #2196F3;
+  transition: color 0.2s;
+}
+
+.header-home-icon:hover {
+  color: #1769aa;
+}
