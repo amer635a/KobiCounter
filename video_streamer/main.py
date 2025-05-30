@@ -4,6 +4,7 @@ import base64
 import time
 import json
 import threading
+from ultralytics import YOLO
 
 broker_address = "localhost"
 broker_port = 1883
@@ -11,7 +12,7 @@ req_topic = "video/stream/req"
 resp_topic = "video/stream/resp"
 photo_req_topic = "video/photos/req"
 photo_resp_topic = "video/photos/resp"
-
+ 
 # Initialize the camera
 cap = cv2.VideoCapture(0)
 
@@ -39,7 +40,6 @@ def stream_video(frequency, duration):
                 "timestamp": time.time()
             })
             client.publish(resp_topic, resp_payload)
-            print(f"📸 Sent frame at {time.time()}")
             time.sleep(interval)
     finally:
         streaming = False
