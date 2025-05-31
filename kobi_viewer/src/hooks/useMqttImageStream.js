@@ -16,6 +16,7 @@ export function useMqttImageStream({
   mqttUrl = "ws://localhost:9001",
 }) {
   useEffect(() => {
+    setConnectStatus(DISCONNECTED_LABEL); // Set to disconnected before connecting
     const { cleanup } = createMqttClient({
       mqttUrl,
       topic,

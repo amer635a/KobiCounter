@@ -1,0 +1,10 @@
+{
+  "commands": {
+    "getDetectionLabels": {
+        "description": "Detection labels",
+        "reqTopic": "get/DetectionLabel/req",
+        "respTopic": "get/DetectionLabel/resp"
+    }
+  } 
+ 
+}

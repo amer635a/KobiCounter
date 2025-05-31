@@ -1,8 +1,10 @@
+// src/Pages/HomePage.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/homePageStyle.css";
 import CustomButton from "../components/CustomButton";
 import Header from "../components/Header";
+import { useController } from "../context/ControllerContext";
 
 const MENU_TITLE = "قائمة التحكم";
 const ADD_LABEL = "إضافة";
@@ -11,6 +13,7 @@ const COUNT_LABEL = "عد";
 
 function HomePage() {
   const navigate = useNavigate();
+  const controller = useController(); // Use shared instance
 
   return (
     <>

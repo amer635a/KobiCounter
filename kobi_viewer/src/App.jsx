@@ -1,18 +1,21 @@
 // src/App.jsx
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import VideoStream from "./Pages/AddPage";
+import { ControllerProvider } from "./context/ControllerContext";
 import HomePage from "./Pages/HomePage";
-import "./style.css";
+import AddPage from "./Pages/AddPage";
+import "./App.css";
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/add" element={<VideoStream />} />
-      </Routes>
-    </Router>
+    <ControllerProvider mqttUrl="ws://localhost:9001">
+      <Router>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/add" element={<AddPage />} />
+        </Routes>
+      </Router>
+    </ControllerProvider>
   );
 }
 
