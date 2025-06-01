@@ -3,9 +3,10 @@ import JsonProvider from '../utils/jsonProvider';
 import CommandInfo from './CommandInfo';
 
 class Controller {
-  constructor(mqttUrl, metaDataPath = '/MetaData.json') {
+  constructor(mqttUrl, metaDataPath = '/MetaData.json', setConnectStatus) {
     this.mqttUrl = mqttUrl;
     this.client = mqtt.connect(this.mqttUrl);
+    this.setConnectStatus = setConnectStatus;
     try {
       this.jsonProvider = new JsonProvider(metaDataPath);
       console.log('✅ JsonProvider instance created');
@@ -19,10 +20,16 @@ class Controller {
 
     this.client.on('connect', () => {
       console.log(`✅ Connected to MQTT broker at ${this.mqttUrl}`);
+      if (this.setConnectStatus) this.setConnectStatus('متصل');
     });
 
     this.client.on('error', (error) => {
       console.error('❌ MQTT Connection Error:', error);
+      if (this.setConnectStatus) this.setConnectStatus('غير متصل');
+    });
+
+    this.client.on('close', () => {
+      if (this.setConnectStatus) this.setConnectStatus('غير متصل');
     });
 
     this.client.on('message', (topic, message) => {

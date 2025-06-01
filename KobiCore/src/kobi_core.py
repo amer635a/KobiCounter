@@ -59,7 +59,7 @@ class KobiCore:
                         frame = cv2.resize(frame, (640, 480))  # Reduce memory use
                         annotated_frame, object_count = self.analyze_frame(frame)
                         self.send_response(annotated_frame, object_count)
-                        gc.collect()  # Free up memory
+                        
                 else:
                     print("⚠️ Received frame with no image field")
 

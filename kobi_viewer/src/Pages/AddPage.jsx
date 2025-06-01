@@ -19,8 +19,11 @@ function AddPage() {
   const HOME_BUTTON_LABEL = "للصفحة الرئيسية";
   const CONNECTED_LABEL = "متصل";
 
-  // Hook handles the MQTT stream
-  useMqttImageStream({ setImage, setImgKey, setConnectStatus });
+ 
+  // Helper to fix base64 padding
+  function fixBase64Padding(base64) {
+    return base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+  }
 
   useEffect(() => {
     if (!controller?.isConnected()) return;
@@ -30,11 +33,26 @@ function AddPage() {
     // Register callback
     controller.addCommand("getDetectionLabels", (labels) => {
       console.log("📥 Received detection labels:", labels);
-      alert(`تم استلام تسميات الكشف: `);
+     
+    });
+
+    controller.addCommand("getAnalyzeVideo", (message) => {
+      try {
+        const payload = JSON.parse(message);
+        if (payload.image) {
+          const base64img = fixBase64Padding(payload.image);
+          setImage(`data:image/jpeg;base64,${base64img}`);
+          setImgKey((k) => k + 1);
+        }
+      } catch (e) {
+        console.error("Error parsing message", e);
+      }
     });
 
     // Explicitly send the request and log it
     controller.sendRequest("getDetectionLabels", {});
+
+    controller.sendRequest("getAnalyzeVideo", {frequnce: 1, duration: 5});
   }, [controller]);
 
   return (

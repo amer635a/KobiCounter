@@ -4,7 +4,12 @@
         "description": "Detection labels",
         "reqTopic": "get/DetectionLabel/req",
         "respTopic": "get/DetectionLabel/resp"
-    }
+    },
+    "getAnalyzeVideo": {
+        "description": "Get a analyze video",
+        "reqTopic": "video/stream/analyze/req",
+        "respTopic": "video/stream/analyze/resp"
+    } 
   } 
  
 }
