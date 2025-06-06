@@ -1,15 +1,54 @@
 {
   "commands": {
     "getDetectionLabels": {
-        "description": "Detection labels",
-        "reqTopic": "get/DetectionLabel/req",
-        "respTopic": "get/DetectionLabel/resp"
+      "description": "Detection labels",
+      "req": {
+        "reqTopic": "get/DetectionLabel/req"
+      },
+      "resp": {
+        "respTopic": "get/DetectionLabel/resp",
+        "labels": ["string"]
+      }
     },
     "getAnalyzeVideo": {
-        "description": "Get a analyze video",
+      "description": "Get an analyzed video",
+      "req": {
         "reqTopic": "video/stream/analyze/req",
-        "respTopic": "video/stream/analyze/resp"
-    } 
-  } 
- 
+        "time": "number",
+        "frequnce": "number"
+      },
+      "resp": {
+        "respTopic": "video/stream/analyze/resp",
+        "image": "base64",
+        "object_count": "number"
+      }
+    },
+    "videoStream": {
+      "description": "Video stream request",
+      "req": {
+        "reqTopic": "video/stream/req",
+        "time": "number",
+        "frequnce": "number"
+      },
+      "resp": {
+        "respTopic": "video/stream/resp"
+      }
+    },
+    "saveItem": {
+      "description": "Save an item",
+      "req": {
+        "reqTopic": "save/item/req",
+        "item": {
+          "name": "string",
+          "date": "string",
+          "amount": "number"
+        }
+      },
+      "resp": {
+        "respTopic": "save/item/resp",
+        "status": "string",
+        "message": "string"
+      }
+    }
+  }
 }

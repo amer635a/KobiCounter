@@ -27,7 +27,20 @@ class JsonProvider {
 
   getCommand(commandName) {
     if (!this.data || !this.data.commands) return undefined;
-    return this.data.commands[commandName];
+
+    const command = this.data.commands[commandName];
+    if (!command) return undefined;
+
+    // Normalize flat format for backward compatibility (optional)
+    if (command.reqTopic && command.respTopic) {
+      return {
+        description: command.description,
+        req: { reqTopic: command.reqTopic },
+        resp: { respTopic: command.respTopic }
+      };
+    }
+
+    return command;
   }
 }
 

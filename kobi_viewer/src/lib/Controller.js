@@ -33,7 +33,7 @@ class Controller {
     });
 
     this.client.on('message', (topic, message) => {
-      console.log(`📩 Received message on "${topic}": ${message.toString()}`);
+      console.log(`📩 Received message on "${topic}"  `);
       this.commandInfos.forEach((cmdInfo) => {
         if (cmdInfo.respTopic === topic && this.callbacks[cmdInfo.respTopic]) {
           this.callbacks[cmdInfo.respTopic](message.toString());
@@ -44,7 +44,7 @@ class Controller {
 
   async init() {
     try {
-      this.commands = await this.jsonProvider.init(); // ✅ This triggers loading
+      this.commands = await this.jsonProvider.init(); // Now returns commands object
     } catch (err) {
       console.error('❌ Controller init failed:', err);
     }
@@ -78,19 +78,25 @@ class Controller {
     console.log(`🔧 Adding support for command "${commandName}"`);
     const cmdData = this.jsonProvider.getCommand(commandName);
     if (cmdData) {
-      const cmdInfo = new CommandInfo(commandName, cmdData);
+      // Use req/resp structure for all commands
+      const reqTopic = cmdData.req.reqTopic || `${commandName}/req`;
+      const respTopic = cmdData.resp.respTopic || `${commandName}/resp`;
+      const cmdInfo = new CommandInfo(commandName, {
+        description: cmdData.description,
+        reqTopic,
+        respTopic
+      });
       this.commandInfos.push(cmdInfo);
-      this.callbacks[cmdInfo.respTopic] = callback; // Register the callback for the response topic
-      this.subscribe(cmdInfo.respTopic); // Subscribe to the response topic so callback will work
+      this.callbacks[cmdInfo.respTopic] = callback;
+      this.subscribe(cmdInfo.respTopic);
       console.log('✅ CommandInfo added and subscribed:', cmdInfo);
     } else {
       console.warn(`⚠️ Command data for "${commandName}" not found.`);
     }
   };
-
+ 
   sendRequest = async (commandName, payload) => {
     console.log(`🔄 Sending request for command "${commandName}" with payload:`, payload);
-    // Find the CommandInfo object for the commandName
     const cmdInfo = this.commandInfos.find(
       (info) => info && info.commandName === commandName
     );
