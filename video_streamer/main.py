@@ -4,7 +4,7 @@ import base64
 import time
 import json
 import threading
-from ultralytics import YOLO
+ 
 
 broker_address = "localhost"
 broker_port = 1883
