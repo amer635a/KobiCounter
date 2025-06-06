@@ -6,6 +6,7 @@ from ultralytics import YOLO
 import base64
 import numpy as np
 import gc
+import threading
 
 
 class KobiCore:
@@ -25,7 +26,7 @@ class KobiCore:
         self.client.subscribe("get/DetectionLabel/req")
         self.client.subscribe("video/stream/resp")
 
-        self.model = YOLO("/home/amer/projects/KobiCounter/KobiCore/my_model/my_model.pt")
+        self.model = YOLO(r"C:\Users\admin\Desktop\projects\KobiCounter\KobiCore\my_model\my_model.pt")
         self.labels = self.model.names
         self.bbox_colors = [
             (164, 120, 87), (68, 148, 228), (93, 97, 209),
@@ -35,6 +36,7 @@ class KobiCore:
         ]
 
         print("🔍 Model labels:", self.labels)
+        self.mutex = threading.Lock()
 
     def on_connect(self, client, userdata, flags, rc):
         print(f"✅ Connected to {self.broker_host}:{self.broker_port} (code {rc})")
@@ -53,7 +55,7 @@ class KobiCore:
             elif topic == "video/stream/resp" and self.pending_analysis:
                 image_data = payload.get("image")
                 if image_data:
-                    print("📥 Received frame for analysis")
+                    # print("📥 Received frame for analysis")
                     frame = self.decode_image(image_data)
                     if frame is not None:
                         frame = cv2.resize(frame, (640, 480))  # Reduce memory use
@@ -86,29 +88,32 @@ class KobiCore:
     def analyze_frame(self, frame):
         if frame is None:
             return None, 0
+        dontenter = False
+        with self.mutex:
+            if dontenter:
+                return frame, 0
+            results = self.model(frame, verbose=False)
+            detections = results[0].boxes
+            object_count = 0
 
-        results = self.model(frame, verbose=False)
-        detections = results[0].boxes
-        object_count = 0
+            for det in detections:
+                conf = det.conf.item()
+                if conf <= 0.5:
+                    continue
 
-        for det in detections:
-            conf = det.conf.item()
-            if conf <= 0.5:
-                continue
+                class_id = int(det.cls.item())
+                xyxy = det.xyxy.cpu().numpy().squeeze().astype(int)
+                xmin, ymin, xmax, ymax = xyxy
 
-            class_id = int(det.cls.item())
-            xyxy = det.xyxy.cpu().numpy().squeeze().astype(int)
-            xmin, ymin, xmax, ymax = xyxy
+                color = self.bbox_colors[class_id % len(self.bbox_colors)]
+                self.draw_detection(frame, xmin, ymin, xmax, ymax, class_id, conf, color)
+                object_count += 1
 
-            color = self.bbox_colors[class_id % len(self.bbox_colors)]
-            self.draw_detection(frame, xmin, ymin, xmax, ymax, class_id, conf, color)
-            object_count += 1
+            cv2.putText(frame, f'Number of objects: {object_count}', (10, 40),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
 
-        cv2.putText(frame, f'Number of objects: {object_count}', (10, 40),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
-
-        del results  # Free memory
-        gc.collect()
+            del results  # Free memory
+            # gc.collect()
 
         return frame, object_count
 
@@ -123,9 +128,10 @@ class KobiCore:
     def send_response(self, frame, object_count):
         _, buffer = cv2.imencode('.jpg', frame)
         jpg_as_text = base64.b64encode(buffer).decode('utf-8')
+        
         resp_payload = json.dumps({"image": jpg_as_text, "object_count": object_count})
         self.client.publish("video/stream/analyze/resp", resp_payload)
-        print("📤 Response published with analyzed frame")
+        # print("📤 Response published with analyzed frame")
 
     def request_stream(self, frequency, time_val):
         payload = json.dumps({"frequnce": frequency, "time": time_val})
