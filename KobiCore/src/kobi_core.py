@@ -1,3 +1,7 @@
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+
 import paho.mqtt.client as mqtt
 import json
 import time
@@ -25,6 +29,9 @@ class KobiCore:
         self.client.subscribe("video/stream/analyze/req")
         self.client.subscribe("get/DetectionLabel/req")
         self.client.subscribe("video/stream/resp")
+        self.client.subscribe("save/item/req")
+        self.client.subscribe("get/history/req")
+        self.client.subscribe("delete/item/req")
 
         self.model = YOLO(r"C:\Users\admin\Desktop\projects\KobiCounter\KobiCore\my_model\my_model.pt")
         self.labels = self.model.names
@@ -37,6 +44,7 @@ class KobiCore:
 
         print("🔍 Model labels:", self.labels)
         self.mutex = threading.Lock()
+        self.delete_mutex = threading.Lock()
 
     def on_connect(self, client, userdata, flags, rc):
         print(f"✅ Connected to {self.broker_host}:{self.broker_port} (code {rc})")
@@ -72,6 +80,103 @@ class KobiCore:
                 })
                 self.client.publish("get/DetectionLabel/resp", info_payload)
                 print("📤 Info response published")
+
+            elif topic == "save/item/req":
+                print("📩 Received save item request")
+                from StoreDataBase.DBManager import OrderDBManager
+                db = OrderDBManager()
+                item = payload.get("item", {})
+                name = item.get("name")
+                date = item.get("date")
+                amount = item.get("amount")
+                status = "make"  # or use name if you want to map name to status
+                try:
+                    db.add_order(date, status, amount)
+                    resp = {
+                        "status": "success",
+                        "message": f"Item saved: {item}"
+                    }
+                except Exception as e:
+                    resp = {
+                       
+                        "status": "error",
+                        "message": str(e)
+                    }
+                self.client.publish("save/item/resp", json.dumps(resp))
+                print("📤 Save item response published")
+
+            elif topic == "get/history/req":
+                print("📩 Received get history request")
+                from StoreDataBase.DBManager import OrderDBManager
+                db = OrderDBManager()
+                history = db.get_order_history()
+                items = []
+                name = payload.get("data", {}).get("name", "")
+                for (iso_date, amount, status) in history:
+                    if "+" in iso_date:
+                        iso_date_z = iso_date.split("+")[0] + "Z"
+                    elif iso_date.endswith("Z"):
+                        iso_date_z = iso_date
+                    else:
+                        iso_date_z = iso_date + "Z"
+                    items.append({
+                        "name": name,
+                        "date": iso_date_z,
+                        "amount": amount,
+                        "status": status
+                    })
+                resp = {
+                    "data": {
+                        "items": items
+                    }
+                }
+                self.client.publish("get/history/resp", json.dumps(resp))
+                print("📤 History response published")
+
+            elif topic == "delete/item/req":
+                print("📩 Received delete item request")
+                from StoreDataBase.DBManager import OrderDBManager
+                db = OrderDBManager()
+                item_id = payload.get("id")
+                print(f"🔍 Deleting item with ID: {item_id}")
+                try:
+                    with self.delete_mutex:
+                        db.delete_order_history_and_update_order(item_id)
+                    resp = {
+                        "status": "success",
+                        "message": f"Deleted item {item_id} and updated orders."
+                    }
+                    # After successful delete, send updated history for the same name
+                    name = payload.get("data", {}).get("name", "")
+                    history = db.get_order_history()
+                    items = []
+                    for (iso_date, amount, status) in history:
+                        if "+" in iso_date:
+                            iso_date_z = iso_date.split("+")[0] + "Z"
+                        elif iso_date.endswith("Z"):
+                            iso_date_z = iso_date
+                        else:
+                            iso_date_z = iso_date + "Z"
+                        items.append({
+                            "name": name,
+                            "date": iso_date_z,
+                            "amount": amount,
+                            "status": status
+                        })
+                    history_resp = {
+                        "data": {
+                            "items": items
+                        }
+                    }
+                    self.client.publish("get/history/resp", json.dumps(history_resp))
+                    print("📤 History response published after delete")
+                except Exception as e:
+                    resp = {
+                        "status": "error",
+                        "message": str(e)
+                    }
+                self.client.publish("delete/item/resp", json.dumps(resp))
+                print("📤 Delete item response published")
 
         except Exception as e:
             print(f"❌ Error in on_message: {e}")
