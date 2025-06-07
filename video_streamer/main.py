@@ -21,14 +21,16 @@ client = mqtt.Client(protocol=mqtt.MQTTv311)
 
 # Global flag to control streaming
 streaming = False
+stream_end_time = 0  # Track the end time for streaming
+
 
 def stream_video(frequency, duration):
-    global streaming
+    global streaming, stream_end_time
     streaming = True
     try:
-        end_time = time.time() + duration
+        stream_end_time = time.time() + duration
         interval = 1.0 / frequency if frequency > 0 else 1.0
-        while time.time() < end_time:
+        while time.time() < stream_end_time:
             ret, frame = cap.read()
             if not ret:
                 print("Failed to capture frame.")
@@ -68,7 +70,7 @@ def on_connect(client, userdata, flags, rc):
     client.subscribe(photo_req_topic)
 
 def on_message(client, userdata, msg):
-    global streaming
+    global streaming, stream_end_time
 
     if msg.topic == req_topic:
         try:
@@ -79,7 +81,10 @@ def on_message(client, userdata, msg):
             if not streaming:
                 threading.Thread(target=stream_video, args=(frequency, duration), daemon=True).start()
             else:
-                print("⚠️ Stream request ignored: already streaming.")
+                # Update the end time to extend the stream
+                stream_end_time = max(stream_end_time, time.time() + duration)
+                remaining = int(stream_end_time - time.time())
+                print(f"⏩ Stream duration updated. Remaining time: {remaining} seconds")
         except Exception as e:
             print(f"❌ Error handling stream request: {e}")
 
