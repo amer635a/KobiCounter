@@ -82,23 +82,51 @@
 }
 
 .addpage-save-btn {
-  background: linear-gradient(90deg, #1a7f5a 0%, #3ecf8e 100%);
+  background-color: #1976d2;
   color: #fff;
   border: none;
-  border-radius: 8px;
-  padding: 12px 32px;
-  font-size: 1.1rem;
-  font-weight: bold;
-  margin-top: 18px;
+  border-radius: 6px;
+  padding: 10px 22px;
   margin-right: 10px;
+  font-size: 1rem;
+  font-weight: 500;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(30, 127, 90, 0.08);
-  transition: background 0.2s, box-shadow 0.2s;
+  transition: background 0.2s, color 0.2s;
 }
 
 .addpage-save-btn:hover {
-  background: linear-gradient(90deg, #168a5a 0%, #2ebf6e 100%);
-  box-shadow: 0 4px 16px rgba(30, 127, 90, 0.16);
+  background-color: #1565c0;
+}
+
+.addpage-history-btn {
+  background-color: #43a047;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 22px;
+  margin-right: 10px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.addpage-history-btn:hover {
+  background-color: #388e3c;
+}
+
+.addpage-history-delete-btn {
+  background: #e74c3c;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 16px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.addpage-history-delete-btn:hover {
+  background: #c0392b;
 }
 
 /* Modal overlay styles */
@@ -202,4 +230,39 @@
   font-size: 1.6rem;
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(231, 76, 60, 0.1);
+}
+
+.addpage-history-table-wrapper {
+  max-height: 350px;
+  overflow-y: auto;
+  margin-top: 16px;
+}
+
+.addpage-history-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  font-size: 1rem;
+  direction: rtl;
+}
+
+.addpage-history-table th,
+.addpage-history-table td {
+  border: 1px solid #e0e0e0;
+  padding: 8px 12px;
+  text-align: center;
+}
+
+.addpage-history-table th {
+  background: #1976d2;
+  color: #fff;
+  font-weight: bold;
+}
+
+.addpage-history-table tr:nth-child(even) {
+  background: #f5f5f5;
+}
+
+.addpage-history-table tr:hover {
+  background: #e3f2fd;
 }

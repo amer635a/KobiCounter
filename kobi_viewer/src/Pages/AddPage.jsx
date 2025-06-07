@@ -13,6 +13,8 @@ function AddPage() {
   const [showModal, setShowModal] = useState(false);
   const [savedData, setSavedData] = useState({ image: null, objectCount: 0 });
   const [editedCount, setEditedCount] = useState(0);
+  const [historyData, setHistoryData] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
   const navigate = useNavigate();
   const controller = useController(); // Use shared instance
 
@@ -71,6 +73,25 @@ function AddPage() {
       }
     });
 
+    controller.addCommand("deleteItem", (message) => {
+      console.log("📥 Received delete item response:", message);
+      if (message === "success") {
+        alert("تم حذف العنصر بنجاح");
+      }
+    });
+
+    controller.addCommand("getHistory", (message) => {
+      console.log("📥 Received get history response:", message);
+      try {
+        const payload = typeof message === 'string' ? JSON.parse(message) : message;
+        if (payload && payload.data && Array.isArray(payload.data.items)) {
+          setHistoryData(payload.data.items);
+          setShowHistory(true);
+        }
+      } catch (e) {
+        console.error("Error parsing getHistory message", e);
+      }
+    });
 
     // Explicitly send the request and log it
     controller.sendRequest("getDetectionLabels", {});
@@ -105,12 +126,13 @@ function AddPage() {
     savedEntries.push(entry);
     localStorage.setItem("savedEntries", JSON.stringify(savedEntries));
     setShowModal(false);
+    // Format date as DD/MM/YYYY
+    const timeNow = new Date(); 
     // Send saveItem request to controller with payload
-    const currentDate = new Date().toISOString();
     controller.sendRequest("saveItem", {
       item: {
         name: "Kobi",
-        date: currentDate,
+        date: timeNow,
         amount: editedCount
       }
     });
@@ -148,6 +170,9 @@ function AddPage() {
         <button onClick={handleSave} className="addpage-save-btn">
           حفظ
         </button>
+        <button onClick={() => controller.sendRequest("getHistory", { data: { name: "kobi" } })} className="addpage-history-btn">
+          السجل
+        </button>
         {showModal && (
           <div className="addpage-modal-overlay">
             <div className="addpage-modal">
@@ -170,6 +195,71 @@ function AddPage() {
               <div className="addpage-modal-actions">
                 <button onClick={handleApprove} className="addpage-modal-approve">✔</button>
                 <button onClick={handleReject} className="addpage-modal-reject">✖</button>
+              </div>
+            </div>
+          </div>
+        )}
+        {showHistory && (
+          <div className="addpage-modal-overlay">
+            <div className="addpage-modal">
+              <button className="addpage-modal-close" onClick={() => setShowHistory(false)}>
+                ×
+              </button>
+              <h3>سجل العناصر</h3>
+              <div className="addpage-history-table-wrapper">
+                <table className="addpage-history-table">
+                  <thead>
+                    <tr>
+                      <th>الاسم</th>
+                      <th>التاريخ</th>
+                      <th>العدد</th>
+                      <th>الحالة</th>
+                      <th>حذف</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {historyData.map((item, idx) => (
+                      <tr key={idx}>
+                        <td>{item.name === 'kobi' ? 'كبة' : item.name}</td>
+                        <td>{
+                          new Date(item.date).toLocaleString('en-GB', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
+                            hour12: false
+                          })
+                        }</td>
+                        <td>{item.amount}</td>
+                        <td>
+                          {item.status === 'make' ? (
+                            <span style={{ color: '#43a047', fontWeight: 'bold', fontSize: '1.2em' }}>+</span>
+                          ) : item.status === 'sell' ? (
+                            <span style={{ color: '#e74c3c', fontWeight: 'bold', fontSize: '1.2em' }}>-</span>
+                          ) : (
+                            item.status
+                          )}
+                        </td>
+                        <td>
+                          <button
+                            className="addpage-history-delete-btn"
+                            title="حذف"
+                            style={{ background: 'none', boxShadow: 'none' }}
+                            onClick={() => {
+                              controller.sendRequest("deleteItem", { id: item.date });
+                              const newHistory = historyData.filter((_, i) => i !== idx);
+                              setHistoryData(newHistory);
+                            }}
+                          >
+                            <span role="img" aria-label="delete">🗑️</span>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>

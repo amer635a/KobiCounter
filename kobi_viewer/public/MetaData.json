@@ -49,6 +49,40 @@
         "status": "string",
         "message": "string"
       }
+    },
+    "deleteItem": {
+      "description": "Delete an item",
+      "req": {
+        "reqTopic": "delete/item/req",
+        "id": "string"
+      },
+      "resp": {
+        "respTopic": "delete/item/resp",
+        "status": "string",
+        "message": "string"
+      }
+    },
+    "getHistory": {
+      "description": "Get history of saved items",
+      "req": {
+        "reqTopic": "get/history/req",
+        "data": {
+          "name": "string"
+        }
+      },
+      "resp": {
+        "respTopic": "get/history/resp",
+        "data": {
+          "items": [
+            {
+              "name": "string",
+              "date": "string",
+              "amount": "number",
+              "status": "string"
+            }
+          ]
+        }
+      }
     }
   }
 }
