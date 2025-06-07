@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import "../styles/AddPageStyle.css";
 import Header from "../components/Header";
 import { useController } from "../context/ControllerContext";
+import AddItemModal from "../components/AddItemModal";
+import ShowHistory from "../components/ShowHistory";
 
 function AddPage() {
   const [image, setImage] = useState(null);
@@ -18,15 +20,19 @@ function AddPage() {
   const navigate = useNavigate();
   const controller = useController(); // Use shared instance
 
+  // Arabic UI text variables
   const NO_IMAGE_TEXT = "لا توجد صورة حتى الآن";
-  const STATUS_LABEL = ":الحالة";
+  const STATUS_LABEL = " الحالة";
   const VIDEO_TITLE = "بث الفيديو";
-  const HOME_BUTTON_LABEL = "للصفحة الرئيسية";
   const CONNECTED_LABEL = "متصل";
-  const ANALYSIS_INFO_LABEL = ":معلومات التحليل";
-  const OBJECT_COUNT_LABEL = ":عدد الكائنات";
+  const ANALYSIS_INFO_LABEL = "معلومات التحليل";
+  const OBJECT_COUNT_LABEL = "عدد الكائنات";
+  const SAVE_BTN_LABEL = "💾 حفظ";
+  const HISTORY_BTN_LABEL = "📜 السجل";
+  const HOME_BTN_LABEL = "🏠 للصفحة الرئيسية";
+  const SAVE_SUCCESS_MSG = "تم حفظ العنصر بنجاح";
+  const DELETE_SUCCESS_MSG = "تم حذف العنصر بنجاح";
 
- 
   // Helper to fix base64 padding
   function fixBase64Padding(base64) {
     return base64 + '='.repeat((4 - (base64.length % 4)) % 4);
@@ -69,14 +75,14 @@ function AddPage() {
     controller.addCommand("saveItem", (message) => {
       console.log("📥 Received save item response:", message);
       if (message === "success") {
-        alert("تم حفظ العنصر بنجاح");
+        alert(SAVE_SUCCESS_MSG);
       }
     });
 
     controller.addCommand("deleteItem", (message) => {
       console.log("📥 Received delete item response:", message);
       if (message === "success") {
-        alert("تم حذف العنصر بنجاح");
+        alert(DELETE_SUCCESS_MSG);
       }
     });
 
@@ -95,11 +101,12 @@ function AddPage() {
 
     // Explicitly send the request and log it
     controller.sendRequest("getDetectionLabels", {});
+    controller.sendRequest("getAnalyzeVideo", { frequnce: 5, time: 30 });
 
-    // Send getAnalyzeVideo every 5 seconds while on this page
+    // Send getAnalyzeVideo every 28 seconds while on this page
     const intervalId = setInterval(() => {
       controller.sendRequest("getAnalyzeVideo", { frequnce: 5, time: 30 });
-    }, 28000);
+    }, 29500);
 
     // Cleanup interval on unmount
     return () => clearInterval(intervalId);
@@ -164,106 +171,38 @@ function AddPage() {
             <span className="addpage-no-image">{NO_IMAGE_TEXT}</span>
           )}
         </div>
-        <button onClick={() => navigate("/")} className="addpage-home-btn">
-          {HOME_BUTTON_LABEL}
-        </button>
-        <button onClick={handleSave} className="addpage-save-btn">
-          حفظ
-        </button>
-        <button onClick={() => controller.sendRequest("getHistory", { data: { name: "kobi" } })} className="addpage-history-btn">
-          السجل
-        </button>
-        {showModal && (
-          <div className="addpage-modal-overlay">
-            <div className="addpage-modal">
-              <button className="addpage-modal-close" onClick={handleReject}>
-                ×
-              </button>
-              <h3>تم الحفظ</h3>
-              {savedData.image && (
-                <img src={savedData.image} alt="Saved" className="addpage-modal-image" />
-              )}
-              <div className="addpage-modal-count-row">
-                <label className="addpage-modal-count-label">عدد الكائنات:</label>
-                <input
-                  type="number"
-                  value={editedCount}
-                  onChange={e => setEditedCount(Number(e.target.value))}
-                  className="addpage-modal-count-input"
-                />
-              </div>
-              <div className="addpage-modal-actions">
-                <button onClick={handleApprove} className="addpage-modal-approve">✔</button>
-                <button onClick={handleReject} className="addpage-modal-reject">✖</button>
-              </div>
-            </div>
-          </div>
-        )}
-        {showHistory && (
-          <div className="addpage-modal-overlay">
-            <div className="addpage-modal">
-              <button className="addpage-modal-close" onClick={() => setShowHistory(false)}>
-                ×
-              </button>
-              <h3>سجل العناصر</h3>
-              <div className="addpage-history-table-wrapper">
-                <table className="addpage-history-table">
-                  <thead>
-                    <tr>
-                      <th>الاسم</th>
-                      <th>التاريخ</th>
-                      <th>العدد</th>
-                      <th>الحالة</th>
-                      <th>حذف</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {historyData.map((item, idx) => (
-                      <tr key={idx}>
-                        <td>{item.name === 'kobi' ? 'كبة' : item.name}</td>
-                        <td>{
-                          new Date(item.date).toLocaleString('en-GB', {
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            second: '2-digit',
-                            hour12: false
-                          })
-                        }</td>
-                        <td>{item.amount}</td>
-                        <td>
-                          {item.status === 'make' ? (
-                            <span style={{ color: '#43a047', fontWeight: 'bold', fontSize: '1.2em' }}>+</span>
-                          ) : item.status === 'sell' ? (
-                            <span style={{ color: '#e74c3c', fontWeight: 'bold', fontSize: '1.2em' }}>-</span>
-                          ) : (
-                            item.status
-                          )}
-                        </td>
-                        <td>
-                          <button
-                            className="addpage-history-delete-btn"
-                            title="حذف"
-                            style={{ background: 'none', boxShadow: 'none' }}
-                            onClick={() => {
-                              controller.sendRequest("deleteItem", { id: item.date });
-                              const newHistory = historyData.filter((_, i) => i !== idx);
-                              setHistoryData(newHistory);
-                            }}
-                          >
-                            <span role="img" aria-label="delete">🗑️</span>
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 18 }}>
+          <button onClick={handleSave} className="addpage-action-btn">
+            {SAVE_BTN_LABEL}
+          </button>
+          <button
+            onClick={() => {
+              setShowHistory(true);
+              controller.sendRequest("getHistory", { data: { name: "kobi" } });
+            }}
+            className="addpage-action-btn"
+          >
+            {HISTORY_BTN_LABEL}
+          </button>
+          <button onClick={() => navigate("/")} className="addpage-action-btn">
+            {HOME_BTN_LABEL}
+          </button>
+        </div>
+        <AddItemModal
+          show={showModal}
+          savedData={savedData}
+          editedCount={editedCount}
+          setEditedCount={setEditedCount}
+          handleApprove={handleApprove}
+          handleReject={handleReject}
+        />
+        <ShowHistory
+          show={showHistory}
+          historyData={historyData}
+          setShowHistory={setShowHistory}
+          controller={controller}
+          setHistoryData={setHistoryData}
+        />
       </div>
     </>
   );
